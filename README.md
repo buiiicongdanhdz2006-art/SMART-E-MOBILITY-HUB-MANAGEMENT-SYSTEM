@@ -6,7 +6,7 @@ kiến trúc / triển khai chương 7).
 
 | Thành phần | Công nghệ | Thư mục |
 |---|---|---|
-| Backend (REST API + WebSocket) | Java 17, Spring Boot 3.3, Spring Data JPA | `backend/` |
+| Backend (REST API + WebSocket) | Java 17–25, Spring Boot 3.5, Spring Data JPA | `backend/` |
 | Web client (User, Operator, Admin) | ReactJS (Vite) | `web/` |
 | Mobile client (User) | React Native (Expo) | `mobile/` |
 | IoT simulator (F-12) | Python 3 + MQTT (paho) | `iot-simulator/` |
