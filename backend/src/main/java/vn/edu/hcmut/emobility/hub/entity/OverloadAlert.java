@@ -1,6 +1,7 @@
 package vn.edu.hcmut.emobility.hub.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -34,6 +35,7 @@ public class OverloadAlert {
     private AlertStatus status = AlertStatus.OPEN;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "load_level")
     private LoadLevel level;
 
     private double utilisation;

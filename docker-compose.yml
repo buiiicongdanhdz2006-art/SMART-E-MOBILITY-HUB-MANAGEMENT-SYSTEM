@@ -1,0 +1,53 @@
+# Smart E-Mobility Hub - full system (deployment view, section 7.2)
+#   docker compose up --build
+#   Web: http://localhost:8081   API: http://localhost:8080   MQTT: localhost:1883
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: emobility
+      POSTGRES_USER: emobility
+      POSTGRES_PASSWORD: emobility
+    ports: ["5432:5432"]
+    volumes: [dbdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U emobility"]
+      interval: 5s
+      retries: 20
+
+  mqtt:
+    image: eclipse-mosquitto:2
+    ports: ["1883:1883"]
+    volumes: ["./infra/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro"]
+
+  backend:
+    build: ./backend
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/emobility
+      DB_USER: emobility
+      DB_PASSWORD: emobility
+      MQTT_URL: tcp://mqtt:1883
+      IOT_API_KEY: emobility-iot-key
+    ports: ["8080:8080"]
+    depends_on:
+      db: { condition: service_healthy }
+      mqtt: { condition: service_started }
+
+  web:
+    build: ./web
+    ports: ["8081:80"]
+    depends_on: [backend]
+
+  iot-simulator:
+    build: ./iot-simulator
+    environment:
+      SIM_TRANSPORT: mqtt
+      MQTT_HOST: mqtt
+      API_URL: http://backend:8080
+      IOT_API_KEY: emobility-iot-key
+      SIM_SPEED: "5"
+    restart: on-failure
+    depends_on: [backend, mqtt]
+
+volumes:
+  dbdata:
