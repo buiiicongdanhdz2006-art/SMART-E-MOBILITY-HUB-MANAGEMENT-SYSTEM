@@ -27,11 +27,14 @@ docker compose up --build
 
 ### Cách B – Chạy từng phần khi phát triển (không cần Docker / PostgreSQL / MQTT)
 
+Yêu cầu: **JDK 17 trở lên** (phải có cả `java` và `javac`; kiểm tra bằng `java -version`), Node.js, Python 3.
+**Không cần cài Maven**: backend có sẵn Maven Wrapper (`mvnw` / `mvnw.cmd`). Lần chạy đầu, wrapper tự tải
+Maven 3.9.9 (~9 MB, có kiểm tra SHA-256) về `~/.m2/wrapper/`; các lần sau dùng lại bản đã tải.
+
 ```bash
 # 1) Backend với H2 (file ./backend/data), MQTT tắt
-#    Cần Java 17+; không cần cài Maven: ./mvnw tự tải Maven ở lần chạy đầu (Windows: mvnw.cmd)
 cd backend
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local      # Windows: mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=local
 
 # 2) Web (proxy /api và /ws sang :8080)
 cd web
@@ -176,6 +179,10 @@ Tuỳ chọn hay dùng: `--speed` (tăng tốc sạc), `--fault-rate` (hỏng c�
 ```bash
 cd backend && ./mvnw test        # Windows: mvnw.cmd test
 ```
+
+> Nếu gặp lỗi `The JAVA_HOME environment variable is not defined correctly` thì máy chưa có JDK (hoặc
+> `JAVA_HOME` trỏ sai): cài JDK 17+ (vd. Eclipse Temurin) rồi chạy lại. Lỗi `Permission denied` khi chạy
+> `./mvnw` trên macOS/Linux: `chmod +x mvnw`.
 
 - `ChargingFlowIntegrationTest` (`@SpringBootTest`, H2 trong bộ nhớ, profile `test`): khởi động toàn bộ ứng dụng
   (Spring, JPA, Tomcat) rồi chạy luồng F-06/F-07 qua service + repository thật — gán cổng, hàng chờ, cắm sạc, sạc xong
