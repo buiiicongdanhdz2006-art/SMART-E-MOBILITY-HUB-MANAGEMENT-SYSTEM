@@ -1,0 +1,11 @@
+Timestamp,Vehicle_ID,Vehicle_Type,Speed_kmh,Latitude,Longitude,Heading_deg,Acceleration_ms2,Engine_RPM,Fuel_Level_Pct,Tire_Pressure_kPa,OBD_Coolant_Temp_C,Distance_Front_m,Brake_Status,Traffic_Density,Driving_Event
+2026-03-28 01:52:54,V001,Sedan,0,24.72,46.68,130,0,0,50.80,225.70,24.80,3.70,Released,Low,Normal
+2026-03-28 01:52:59,V002,SUV,0,24.73,46.68,69,0,0,54.70,232.70,24.50,9.20,Released,Low,Idle
+2026-03-28 01:53:04,V003,Truck,0,24.71,46.68,243,0,0,48.80,279.90,25.50,3,Released,Low,Normal
+2026-03-28 01:53:09,V004,Electric,0,24.71,46.68,298,0,0,81.70,238.60,25.10,3.80,Released,Low,Idle
+2026-03-28 01:53:14,V005,Sedan,2.40,24.70,46.67,191,1.73,1004,90.30,221.20,26,4,Released,Low,Normal
+2026-03-28 01:53:19,V006,SUV,0,24.71,46.66,325,0,0,61.10,239.10,24.20,9.10,Released,Low,Idle
+2026-03-28 01:53:24,V007,Truck,0,24.72,46.68,50,0,0,77.80,273.60,24.80,4.50,Released,Low,Idle
+2026-03-28 01:53:29,V008,Electric,3.60,24.72,46.70,21,2.61,0,46.60,240.10,25.80,7.70,Released,Low,Rapid_Acceleration
+2026-03-28 01:53:34,V001,Sedan,0,24.72,46.68,130,0,0,50.80,224.60,24.30,9.40,Released,Low,Idle
+2026-03-28 01:53:39,V002,SUV,3.80,24.73,46.68,69,2.76,1192,54.70,231,24.20,8.10,Released,Low,Rapid_Acceleration

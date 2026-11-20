@@ -1,0 +1,51 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: emobility-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/emobility}
+    username: ${DB_USER:emobility}
+    password: ${DB_PASSWORD:emobility}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: true
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Asia/Ho_Chi_Minh
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+      fail-on-empty-beans: false
+    time-zone: Asia/Ho_Chi_Minh
+
+auth:
+  session-hours: 12
+
+hub:
+  overload-check-ms: 30000
+
+iot:
+  api-key: ${IOT_API_KEY:emobility-iot-key}
+  lost-timeout-seconds: 60
+  overheat-celsius: 55
+  min-tire-pressure-kpa: 180
+  mqtt:
+    enabled: ${MQTT_ENABLED:true}
+    broker-url: ${MQTT_URL:tcp://localhost:1883}
+    client-id: emobility-backend
+
+notification:
+  # Channels that are "down", to demonstrate alert delivery failure + retry on another channel (F11-AF-01)
+  disabled-channels: SMS
+
+app:
+  seed:
+    enabled: true
+
+logging:
+  level:
+    vn.edu.hcmut.emobility: INFO
