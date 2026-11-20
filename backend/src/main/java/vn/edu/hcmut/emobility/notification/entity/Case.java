@@ -26,8 +26,8 @@ import java.util.Set;
 import vn.edu.hcmut.emobility.common.enums.CaseStatus;
 import vn.edu.hcmut.emobility.common.enums.Severity;
 
-/** Case handled on the Monitoring Dashboard (F-11): parent of Alert and Complaint. */
-@Entity
+/** Case handled on the Monitoring Dashboard (F-11): parent of Alert and Complaint. Entity name avoids the JPQL keyword CASE. */
+@Entity(name = "SupportCase")
 @Table(name = "cases")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "case_type")

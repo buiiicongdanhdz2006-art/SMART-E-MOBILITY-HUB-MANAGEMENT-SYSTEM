@@ -7,31 +7,19 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.edu.hcmut.emobility.booking.entity.Booking;
-import vn.edu.hcmut.emobility.booking.repository.BookingRepository;
 import vn.edu.hcmut.emobility.charging.controller.IoTPortMonitor;
 import vn.edu.hcmut.emobility.charging.entity.ChargingPort;
 import vn.edu.hcmut.emobility.charging.entity.ChargingRequest;
 import vn.edu.hcmut.emobility.charging.repository.ChargingPortRepository;
 import vn.edu.hcmut.emobility.charging.repository.ChargingRequestRepository;
-import vn.edu.hcmut.emobility.common.api.IIncidentReport;
-import vn.edu.hcmut.emobility.common.api.INotification;
-import vn.edu.hcmut.emobility.common.api.IVehicleState;
-import vn.edu.hcmut.emobility.common.enums.AlertType;
-import vn.edu.hcmut.emobility.common.enums.BookingStatus;
-import vn.edu.hcmut.emobility.common.enums.IncidentType;
 import vn.edu.hcmut.emobility.common.enums.PortStatus;
 import vn.edu.hcmut.emobility.common.enums.RequestStatus;
 import vn.edu.hcmut.emobility.common.enums.ReservationStatus;
-import vn.edu.hcmut.emobility.common.enums.SeverityLevel;
 import vn.edu.hcmut.emobility.common.enums.VehicleStatus;
-import vn.edu.hcmut.emobility.common.websocket.LiveUpdatePublisher;
 import vn.edu.hcmut.emobility.fleet.entity.DispatchOrder;
 import vn.edu.hcmut.emobility.fleet.repository.DispatchOrderRepository;
-import vn.edu.hcmut.emobility.fleet.service.FleetDispatchService;
 import vn.edu.hcmut.emobility.hub.entity.Hub;
 import vn.edu.hcmut.emobility.hub.repository.HubRepository;
 import vn.edu.hcmut.emobility.parking.entity.ParkingSlot;
@@ -57,46 +45,27 @@ import vn.edu.hcmut.emobility.vehicle.repository.VehicleRepository;
 public class IoTDataService {
 
     private static final Logger log = LoggerFactory.getLogger(IoTDataService.class);
-    public static final int LOW_BATTERY = 20;
-
     private final IoTPortMonitor portMonitor;
-    private final IVehicleState vehicleState;
     private final ParkingService parkingService;
-    private final IIncidentReport incidentReport;
-    private final INotification notification;
-    private final BookingRepository bookings;
     private final DispatchOrderRepository dispatchOrders;
-    private final FleetDispatchService fleetService;
     private final HubRepository hubs;
     private final ChargingPortRepository ports;
     private final ChargingRequestRepository chargingRequests;
     private final VehicleRepository vehicles;
     private final ParkingSlotRepository slots;
     private final ParkingReservationRepository reservations;
-    private final LiveUpdatePublisher live;
     private final VehicleTelemetryHandler telemetryHandler;
 
-    public IoTDataService(IoTPortMonitor portMonitor, IVehicleState vehicleState, ParkingService parkingService,
-                          IIncidentReport incidentReport, INotification notification, BookingRepository bookings,
-                          DispatchOrderRepository dispatchOrders, FleetDispatchService fleetService, HubRepository hubs,
-                          ChargingPortRepository ports, ChargingRequestRepository chargingRequests, VehicleRepository vehicles,
-                          ParkingSlotRepository slots, ParkingReservationRepository reservations, LiveUpdatePublisher live,
-                          VehicleTelemetryHandler telemetryHandler) {
+    public IoTDataService(IoTPortMonitor portMonitor, ParkingService parkingService, DispatchOrderRepository dispatchOrders, HubRepository hubs, ChargingPortRepository ports, ChargingRequestRepository chargingRequests, VehicleRepository vehicles, ParkingSlotRepository slots, ParkingReservationRepository reservations, VehicleTelemetryHandler telemetryHandler) {
         this.portMonitor = portMonitor;
-        this.vehicleState = vehicleState;
         this.parkingService = parkingService;
-        this.incidentReport = incidentReport;
-        this.notification = notification;
-        this.bookings = bookings;
         this.dispatchOrders = dispatchOrders;
-        this.fleetService = fleetService;
         this.hubs = hubs;
         this.ports = ports;
         this.chargingRequests = chargingRequests;
         this.vehicles = vehicles;
         this.slots = slots;
         this.reservations = reservations;
-        this.live = live;
         this.telemetryHandler = telemetryHandler;
     }
 

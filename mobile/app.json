@@ -1,0 +1,9 @@
+{
+  "expo": {
+    "name": "E-Mobility Hub",
+    "slug": "emobility-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "android": { "package": "vn.edu.hcmut.emobility" }
+  }
+}
