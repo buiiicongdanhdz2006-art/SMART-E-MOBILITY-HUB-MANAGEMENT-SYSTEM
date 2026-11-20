@@ -12,8 +12,12 @@ import vn.edu.hcmut.emobility.charging.entity.ChargingPort;
 
 public interface ChargingPortRepository extends JpaRepository<ChargingPort, Long> {
 
-    /** findByHub(hubId): all ports of the Hub with their status. */
     List<ChargingPort> findByHub_IdOrderByCode(Long hubId);
+
+    /** findByHub(hubId) of the class diagram: all ports of the Hub with their status, ordered by code. */
+    default List<ChargingPort> findByHub(Long hubId) {
+        return findByHub_IdOrderByCode(hubId);
+    }
 
     Optional<ChargingPort> findByCode(String code);
 

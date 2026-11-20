@@ -15,7 +15,6 @@ import vn.edu.hcmut.emobility.common.exception.ApiException;
 import vn.edu.hcmut.emobility.common.security.CurrentAccount;
 import vn.edu.hcmut.emobility.notification.entity.Complaint;
 import vn.edu.hcmut.emobility.notification.service.CaseDatabase;
-import vn.edu.hcmut.emobility.notification.service.NotificationService;
 
 /** User.reportIssue(): a student reports a problem in-app; MonitoringDashboard.receiveComplaint stores it. */
 @RestController
@@ -23,11 +22,11 @@ import vn.edu.hcmut.emobility.notification.service.NotificationService;
 public class ComplaintController {
 
     private final CaseDatabase caseDb;
-    private final NotificationService notificationService;
+    private final MonitoringDashboardController dashboard;
 
-    public ComplaintController(CaseDatabase caseDb, NotificationService notificationService) {
+    public ComplaintController(CaseDatabase caseDb, MonitoringDashboardController dashboard) {
         this.caseDb = caseDb;
-        this.notificationService = notificationService;
+        this.dashboard = dashboard;
     }
 
     @PostMapping
@@ -46,10 +45,8 @@ public class ComplaintController {
             // keep MEDIUM
         }
         Long hubId = body.get("hubId") == null || body.get("hubId").isBlank() ? null : Long.valueOf(body.get("hubId"));
-        Complaint c = caseDb.logComplaint(new Complaint(title.trim(), description.trim(), severity, u.getId(), hubId,
+        return dashboard.receiveComplaint(new Complaint(title.trim(), description.trim(), severity, u.getId(), hubId,
                 body.getOrDefault("channel", "IN_APP")));
-        MonitoringDashboardController.notifyNewComplaint(notificationService, c);
-        return c;
     }
 
     @GetMapping("/my")

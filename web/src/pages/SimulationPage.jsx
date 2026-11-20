@@ -10,7 +10,11 @@ const PARAMS = {
 };
 const NAMES = { HOURS_SETTING: 'Thay đổi giờ hoạt động', CAPACITY_LIMIT: 'Giới hạn công suất', HARDWARE_FAILURE: 'Hỏng thiết bị', CONGESTION_SETTING: 'Tắc nghẽn / tăng nhu cầu' };
 
-/** SimulationUI boundary of F-10 (UC-F10-01 .. 04). */
+/**
+ * SimulationUI boundary of F-10 (UC-F10-01 .. 04). The handler names follow the SimulationUI class of the
+ * class diagram: showConfigScreen, submitScenario, displayValidationError, displayResults, displayFailure,
+ * onRerunSelected, prefillParameters.
+ */
 export default function SimulationPage() {
   const [hubs] = useLoad(() => get('/api/hubs'));
   const [history, reloadHistory] = useLoad(() => get('/api/simulation/scenarios'));
@@ -19,38 +23,66 @@ export default function SimulationPage() {
   const [win, setWin] = useState({ windowStart: localInput(0), windowEnd: localInput(120) });
   const [values, setValues] = useState({});
   const [result, setResult] = useState(null);
+  const [validationErrors, setValidationErrors] = useState([]);
+  const [failure, setFailure] = useState(null);
   const [run, busy, error] = useAction();
 
   const val = (k, def) => (values[k] ?? def);
-  const submit = () => run(async () => {
+
+  /** Parameter errors for the Operator to correct (F10-AF-01). */
+  const displayValidationError = (errors) => { setResult(null); setFailure(null); setValidationErrors(errors); };
+  /** Simulation state, impact metrics and suggested actions (F10-NF-06). */
+  const displayResults = (r) => { setFailure(null); setValidationErrors([]); setResult(r); };
+  /** Failure message; the Operator can modify the scenario and try again (F10-AF-02). */
+  const displayFailure = (message) => { setResult(null); setValidationErrors([]); setFailure(message); };
+
+  /** Collects type, hub, time window and parameters and passes them to SimulationController (F10-NF-03). */
+  const submitScenario = () => run(async () => {
     const params = { type, hubId, ...win };
     PARAMS[type].forEach(([k, , def]) => { const v = val(k, def); if (v !== '' && v != null) params[k] = v; });
-    setResult(await post('/api/simulation/scenarios', params));
+    try {
+      const r = await post('/api/simulation/scenarios', params);
+      if (r.successful) displayResults(r); else displayFailure(r.error);
+    } catch (e) {
+      if (e.status !== 400) throw e;
+      displayValidationError(e.errors?.length ? e.errors : [e.message]);
+    }
     await reloadHistory();
   });
-  const rerun = () => run(async () => {
-    const s = await get('/api/simulation/rerun');
+
+  /** Prefills the form with the parameters of the previous scenario (F10-AF-03). */
+  const prefillParameters = (s) => {
     setType(s.type); setHubId(s.hubId); setValues(s.parameters || {});
     if (s.window) setWin({ windowStart: s.window.start.slice(0, 16), windowEnd: s.window.end.slice(0, 16) });
-  });
+  };
+  /** Rerun button: gets the previous scenario from the controller and prefills the form (F10-AF-03). */
+  const onRerunSelected = () => run(async () => prefillParameters(await get('/api/simulation/rerun')));
+
+  /** Simulation configuration screen (F10-NF-02). */
+  const showConfigScreen = () => (
+    <Card title="Cấu hình kịch bản (UC-F10-01)" actions={<button className="ghost" onClick={onRerunSelected} disabled={busy}>Chạy lại kịch bản trước</button>}>
+      <div className="grid g4">
+        <Field label="Loại kịch bản"><select value={type} onChange={(e) => { setType(e.target.value); setValues({}); }}>{Object.keys(PARAMS).map((t) => <option key={t} value={t}>{NAMES[t]}</option>)}</select></Field>
+        <Field label="Trạm"><HubSelect hubs={hubs} value={hubId} onChange={setHubId} /></Field>
+        <Field label="Từ"><input type="datetime-local" value={win.windowStart} onChange={(e) => setWin({ ...win, windowStart: e.target.value })} /></Field>
+        <Field label="Đến"><input type="datetime-local" value={win.windowEnd} onChange={(e) => setWin({ ...win, windowEnd: e.target.value })} /></Field>
+        {PARAMS[type].map(([k, text, def]) => (
+          <Field key={k} label={text}><input type="number" step="any" value={val(k, def)} onChange={(e) => setValues({ ...values, [k]: e.target.value })} /></Field>))}
+      </div>
+      {validationErrors.length > 0 && (
+        <div className="msg bad" style={{ marginTop: 10 }}>Tham số chưa hợp lệ, vui lòng sửa lại:
+          <ul>{validationErrors.map((x, k) => <li key={k}>{x}</li>)}</ul></div>)}
+      <div className="row" style={{ marginTop: 10 }}><button onClick={submitScenario} disabled={busy || !hubId}>Chạy mô phỏng (UC-F10-02)</button></div>
+    </Card>
+  );
 
   const m = result?.metrics;
   return (
     <>
       <h2>Mô phỏng What-if</h2>
       <Msg error={error} />
-      <Card title="Cấu hình kịch bản (UC-F10-01)" actions={<button className="ghost" onClick={rerun} disabled={busy}>Chạy lại kịch bản trước</button>}>
-        <div className="grid g4">
-          <Field label="Loại kịch bản"><select value={type} onChange={(e) => { setType(e.target.value); setValues({}); }}>{Object.keys(PARAMS).map((t) => <option key={t} value={t}>{NAMES[t]}</option>)}</select></Field>
-          <Field label="Trạm"><HubSelect hubs={hubs} value={hubId} onChange={setHubId} /></Field>
-          <Field label="Từ"><input type="datetime-local" value={win.windowStart} onChange={(e) => setWin({ ...win, windowStart: e.target.value })} /></Field>
-          <Field label="Đến"><input type="datetime-local" value={win.windowEnd} onChange={(e) => setWin({ ...win, windowEnd: e.target.value })} /></Field>
-          {PARAMS[type].map(([k, text, def]) => (
-            <Field key={k} label={text}><input type="number" step="any" value={val(k, def)} onChange={(e) => setValues({ ...values, [k]: e.target.value })} /></Field>))}
-        </div>
-        <div className="row" style={{ marginTop: 10 }}><button onClick={submit} disabled={busy || !hubId}>Chạy mô phỏng (UC-F10-02)</button></div>
-      </Card>
-      {result && !result.successful && <div className="msg bad">{result.error}</div>}
+      {showConfigScreen()}
+      {failure && <div className="msg bad">{failure}</div>}
       {result?.successful && (
         <div className="cols">
           <Card title="Đánh giá tác động (UC-F10-03)" actions={<Badge value={m.overallSeverity} text={'Mức độ ' + m.overallSeverity} />}>

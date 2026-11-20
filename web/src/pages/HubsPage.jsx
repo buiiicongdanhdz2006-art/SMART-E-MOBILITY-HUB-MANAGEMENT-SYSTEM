@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { get } from '../api.js';
 import { useLive } from '../live.js';
 import { Badge, Card, Empty, Msg, useAction, useLoad } from '../ui.jsx';
+import { getCurrentLocation } from '../location.js';
 
-/** F-02: Hub list, Hub status, nearest Hubs (browser geolocation = LocationService). */
+/** F-02: Hub list, Hub status, nearest Hubs (location from LocationService.getCurrentLocation). */
 export default function HubsPage() {
   const [hubs, reload, error] = useLoad(() => get('/api/hubs'));
   const [selected, setSelected] = useState(null);
@@ -22,14 +23,10 @@ export default function HubsPage() {
     setStatus(st); setSlots(sl); setPorts(po);
   };
 
-  const findNearest = () => run(() => new Promise((resolve, reject) => {
-    const query = async (lat, lng) => {
-      try { setNearest(await get(`/api/hubs/nearest?lat=${lat}&lng=${lng}${need ? '&need=' + need : ''}`)); resolve(); } catch (e) { reject(e); }
-    };
-    if (!navigator.geolocation) return query(10.8700, 106.8030);
-    navigator.geolocation.getCurrentPosition((p) => query(p.coords.latitude, p.coords.longitude),
-      () => query(10.8700, 106.8030), { timeout: 4000 }); // fallback: centre of the campus
-  }));
+  const findNearest = () => run(async () => {
+    const { lat, lng } = await getCurrentLocation();
+    setNearest(await get(`/api/hubs/nearest?lat=${lat}&lng=${lng}${need ? '&need=' + need : ''}`));
+  });
 
   return (
     <>

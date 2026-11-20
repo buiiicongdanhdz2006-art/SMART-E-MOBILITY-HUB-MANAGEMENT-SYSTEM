@@ -65,7 +65,12 @@ public class ProfileService {
     /** UC-F01-07: ended bookings of the last days (30 by default), newest first. */
     @Transactional(readOnly = true)
     public List<Booking> getHistory(Long userId, int days) {
-        LocalDateTime from = LocalDateTime.now().minusDays(days <= 0 ? 30 : days);
+        return getEndedBookings(userId, LocalDateTime.now().minusDays(days <= 0 ? 30 : days));
+    }
+
+    /** User.getEndedBookings(fromDate): completed, cancelled or expired bookings since fromDate (UC-F01-07). */
+    @Transactional(readOnly = true)
+    public List<Booking> getEndedBookings(Long userId, LocalDateTime from) {
         List<Booking> ended = bookings.findByUser_IdOrderByCreatedAtDesc(userId).stream()
                 .filter(b -> b.getStatus() == BookingStatus.COMPLETED || b.getStatus() == BookingStatus.CANCELLED
                         || b.getStatus() == BookingStatus.EXPIRED)
@@ -89,7 +94,7 @@ public class ProfileService {
         if (type == null) errors.add("Loại xe là bắt buộc");
         if (!errors.isEmpty()) throw ApiException.validation(errors);
         String normalized = AuthService.normalizePlate(plate);
-        if (personalVehicles.existsByPlateIgnoreCase(normalized)) throw ApiException.conflict("Biển số đã được đăng ký");
+        if (existsPlate(normalized)) throw ApiException.conflict("Biển số đã được đăng ký");
         User user = (User) accounts.findById(userId).orElseThrow(() -> ApiException.notFound("người dùng"));
         PersonalVehicle v = new PersonalVehicle(user, type, normalized, brand == null ? null : brand.trim());
         user.addVehicle(v);
@@ -97,6 +102,11 @@ public class ProfileService {
     }
 
     public List<PersonalVehicle> getVehicles(Long userId) { return personalVehicles.findByOwner_Id(userId); }
+
+    /** User.existsPlate(plate): true if the plate number is already registered by any user (UC-F01-08). */
+    public boolean existsPlate(String plate) {
+        return plate != null && personalVehicles.existsByPlateIgnoreCase(AuthService.normalizePlate(plate));
+    }
 
     List<Booking> getActiveBookings(Long userId) {
         return bookings.findByUser_IdAndStatusInOrderByPickupTimeAsc(userId, List.of(BookingStatus.RESERVED, BookingStatus.IN_PROGRESS));

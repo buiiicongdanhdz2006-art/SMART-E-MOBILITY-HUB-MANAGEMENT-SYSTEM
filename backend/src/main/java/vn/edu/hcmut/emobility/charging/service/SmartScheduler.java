@@ -302,7 +302,7 @@ public class SmartScheduler implements IChargingEvents {
 
         // When does each working port become free?
         Map<ChargingPort, LocalDateTime> freeAt = new HashMap<>();
-        for (ChargingPort p : ports.findByHub_IdOrderByCode(hub.getId())) {
+        for (ChargingPort p : ports.findByHub(hub.getId())) {
             if (p.getStatus() == PortStatus.FIXING) continue;
             LocalDateTime t = now;
             ChargingRequest holder = requests.findActiveByPort(p.getId()).orElse(null);

@@ -140,8 +140,19 @@ public class MonitoringDashboardController {
         return m;
     }
 
-    /** Used by the dashboard to show "new complaint" notifications. */
-    static void notifyNewComplaint(NotificationService n, Complaint c) {
-        n.notifyOperators(AlertType.GENERAL, "Khiếu nại mới #" + c.getId(), c.getTitle());
+    /**
+     * Stores a complaint reported by a User with CaseDatabase.logComplaint() and shows a "new complaint"
+     * notification on the dashboard (called from User.reportIssue, see ComplaintController).
+     */
+    @Transactional
+    public Complaint receiveComplaint(Complaint c) {
+        Complaint saved = caseDb.logComplaint(c);
+        showNotification("Khiếu nại mới #" + saved.getId(), saved.getTitle());
+        return saved;
+    }
+
+    /** Displays a system notification to the Operators (new complaint, alert delivery failure). */
+    public void showNotification(String title, String message) {
+        notificationService.notifyOperators(AlertType.GENERAL, title, message);
     }
 }

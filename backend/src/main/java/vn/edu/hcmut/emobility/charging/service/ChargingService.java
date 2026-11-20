@@ -80,7 +80,7 @@ public class ChargingService {
     @Transactional(readOnly = true)
     public List<ChargingPort> getPortStatus(Long hubId) {
         hubQuery.getHub(hubId);
-        return ports.findByHub_IdOrderByCode(hubId);
+        return ports.findByHub(hubId);
     }
 
     /** Forwards the fault to incident reporting (F-09.1), sets the port to FIXING and warns the Operators. */
@@ -312,7 +312,7 @@ public class ChargingService {
 
     @Transactional(readOnly = true)
     public List<ChargingRequestView> getRequestsByUser(Long userId) {
-        return requests.findByUser_IdOrderByCreatedAtDesc(userId).stream().map(this::view).toList();
+        return requests.findByUser(userId).stream().map(this::view).toList();
     }
 
     /** Cancels a WAITING or ASSIGNED request of the User and calls SmartScheduler.onRequestReleased(). */

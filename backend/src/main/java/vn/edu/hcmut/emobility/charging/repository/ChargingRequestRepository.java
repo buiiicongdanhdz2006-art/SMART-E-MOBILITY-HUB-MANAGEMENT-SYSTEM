@@ -10,8 +10,12 @@ import vn.edu.hcmut.emobility.common.enums.RequestStatus;
 
 public interface ChargingRequestRepository extends JpaRepository<ChargingRequest, Long> {
 
-    /** findByUser(userId). */
     List<ChargingRequest> findByUser_IdOrderByCreatedAtDesc(Long userId);
+
+    /** findByUser(userId) of the class diagram: requests of the user, newest first. */
+    default List<ChargingRequest> findByUser(Long userId) {
+        return findByUser_IdOrderByCreatedAtDesc(userId);
+    }
 
     List<ChargingRequest> findByHub_IdAndStatusIn(Long hubId, Collection<RequestStatus> statuses);
 

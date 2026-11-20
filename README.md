@@ -102,7 +102,7 @@ thông báo qua `INotification`. F-06 không phụ thuộc thuật toán lịch:
 | Chức năng | Class trong PDF | File chính |
 |---|---|---|
 | F-01 | AuthController, ProfileController, VehicleController, EmailService, Session, OtpCode, Account/User/Operator/Admin | `auth/controller/*`, `auth/service/AuthService`, `ProfileService`, `EmailService`, `auth/entity/*` |
-| F-02 | HubController, AlertController, Hub, OverloadAlert, HubSummary, HubStatus, AlertDetail, Location | `hub/controller/*`, `hub/service/HubService`, `OverloadMonitor`, `hub/entity/*`, `hub/dto/*` |
+| F-02 | HubController, AlertController, Hub, OverloadAlert, HubSummary, HubStatus, AlertDetail, Location, LocationService | `hub/controller/*`, `hub/service/HubService`, `OverloadMonitor`, `hub/entity/*`, `hub/dto/*` (LocationService = `web/src/location.js`) |
 | F-03 | VehicleService, Vehicle | `vehicle/service/VehicleService`, `vehicle/entity/Vehicle` |
 | F-04 | BookingService, Booking, Rental | `booking/*` |
 | F-05 | ParkingService, ParkingSlot, ParkingReservation, PersonalVehicle | `parking/*` |
@@ -114,6 +114,12 @@ thông báo qua `INotification`. F-06 không phụ thuộc thuật toán lịch:
 | F-11 | AlertService, NotificationService, CaseDatabase, Case, Alert, Complaint | `notification/*` (MonitoringDashboard = `MonitoringDashboardController` + `web/src/pages/MonitoringPage.jsx`) |
 | F-12 | IoTPortMonitor, MQTT subscriber | `iot/MqttSubscriber`, `iot/IoTDataService`, `iot/VehicleTelemetryHandler`, `iot/IoTIngestController` |
 | F-13 | NotificationService (tự động) | `notification/service/AutoNotificationJob` + thông báo pin thấp (IoT), sạc xong (ChargingService) |
+
+Mức hiện thực so với thiết kế: **69/69 class** và toàn bộ **295 phương thức** trong bảng mô tả phương thức (mục 6.2) có
+trong code (tên giữ nguyên; `findById`, `save`, `findAll` của các repository là phương thức kế thừa từ `JpaRepository`).
+Các class «boundary» phía giao diện: `SimulationUI` → `SimulationPage.jsx` (các hàm `showConfigScreen`, `submitScenario`,
+`displayValidationError`, `displayResults`, `displayFailure`, `onRerunSelected`, `prefillParameters`),
+`MonitoringDashboard` → `MonitoringDashboardController` (`receiveComplaint`, `showNotification`, …) + `MonitoringPage.jsx`.
 
 Ghi chú hiện thực:
 - Các phương thức static trong class diagram (`Account.find`, `Hub.findAll`, `OverloadAlert.findByStatus` …) được đặt ở
@@ -184,15 +190,23 @@ cd backend && ./mvnw test        # Windows: mvnw.cmd test
 > `JAVA_HOME` trỏ sai): cài JDK 17+ (vd. Eclipse Temurin) rồi chạy lại. Lỗi `Permission denied` khi chạy
 > `./mvnw` trên macOS/Linux: `chmod +x mvnw`.
 
+Ba module có test case theo sơ đồ thành phần (hình 2, mục 7.3) là **F-07 Smart Scheduling**, **F-09 Incident &
+Maintenance** và **F-10 What-if Simulation**; cả ba đều có unit test và test tích hợp.
+
 - `ChargingFlowIntegrationTest` (`@SpringBootTest`, H2 trong bộ nhớ, profile `test`): khởi động toàn bộ ứng dụng
   (Spring, JPA, Tomcat) rồi chạy luồng F-06/F-07 qua service + repository thật — gán cổng, hàng chờ, cắm sạc, sạc xong
   nhường cổng, cổng hỏng / sửa xong, huỷ — và gọi thử các API công khai (JSON, 401, 404). Nếu ánh xạ JPA hoặc query sai,
   test này báo lỗi đầu tiên.
+- `IncidentSimulationIntegrationTest`: gọi REST thật có đăng nhập (token) cho F-09 — báo cáo thiếu thông tin (400), sai
+  thứ tự trạng thái (409), REPORTED → INVESTIGATING → MAINTENANCE (xe chuyển MAINTENANCE) → RESOLVED (xe về AVAILABLE),
+  lọc lịch sử — và F-10 — tham số sai (400), kịch bản hỏng cổng ra chỉ số tác động + đề xuất, Rerun điền lại kịch bản cũ;
+  kèm kiểm tra phân quyền (chưa đăng nhập 401, sai vai trò / thiếu quyền 403).
 
 Unit test (JUnit 5) cho các luật nghiệp vụ không cần database:
 `ChargingRequestStateTest` (state chart yêu cầu / phiên / cổng sạc), `SmartSchedulerPriorityTest` (độ ưu tiên, hàng chờ,
 yêu cầu bị gián đoạn F-07), `FleetLogicTest` (mất cân bằng, gợi ý điều phối F-08), `SimulationEngineTest` (4 loại kịch bản F-10),
-`DomainRulesTest` (băm mật khẩu, validate đăng ký, mức tải hub, state chart xe / sự cố / cảnh báo, quyền Operator).
+`DomainRulesTest` (băm mật khẩu, validate đăng ký, mức tải hub, state chart xe / sự cố / cảnh báo, quyền Operator),
+`IncidentLifecycleTest` (F-09: kiểm tra form báo cáo, state chart sự cố gồm cả nhánh báo động giả, lọc lịch sử).
 
 ## 7. API chính
 
