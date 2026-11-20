@@ -117,13 +117,17 @@ public class IoTDataService {
         }
         out.put("hubs", hubList);
 
+        Map<Long, ChargingRequest> byPort = new java.util.HashMap<>();
+        for (ChargingRequest r : chargingRequests.findByStatusIn(List.of(RequestStatus.ASSIGNED, RequestStatus.CHARGING))) {
+            if (r.getAssignedPort() != null) byPort.put(r.getAssignedPort().getId(), r);
+        }
         List<Map<String, Object>> portList = new ArrayList<>();
         for (ChargingPort p : ports.findAll()) {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("code", p.getCode());
             m.put("hubId", p.getHubId());
             m.put("status", p.getStatus().name());
-            ChargingRequest r = chargingRequests.findActiveByPort(p.getId()).orElse(null);
+            ChargingRequest r = byPort.get(p.getId());
             if (r != null) {
                 m.put("requestStatus", r.getStatus().name());
                 m.put("vehicleRef", r.getVehicleRef());
@@ -156,16 +160,18 @@ public class IoTDataService {
         }
         out.put("vehicles", vehicleList);
 
+        java.util.Set<Long> checkedIn = new java.util.HashSet<>();
+        for (var res : reservations.findByStatusIn(List.of(ReservationStatus.CHECKED_IN))) checkedIn.add(res.getSlot().getId());
         List<Map<String, Object>> slotList = new ArrayList<>();
         for (ParkingSlot s : slots.findAll()) {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("code", s.getCode());
             m.put("status", s.getStatus().name());
-            m.put("checkedIn", !reservations.findBySlotIdAndStatusIn(s.getId(), List.of(ReservationStatus.CHECKED_IN)).isEmpty());
+            m.put("checkedIn", checkedIn.contains(s.getId()));
             slotList.add(m);
         }
         out.put("slots", slotList);
-        out.put("chargingRequests", chargingRequests.findByStatus(RequestStatus.CHARGING).size());
+        out.put("chargingRequests", byPort.values().stream().filter(r -> r.getStatus() == RequestStatus.CHARGING).count());
         return out;
     }
 

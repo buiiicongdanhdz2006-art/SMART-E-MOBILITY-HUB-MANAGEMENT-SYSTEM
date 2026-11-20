@@ -9,5 +9,5 @@ public interface OverloadAlertRepository extends JpaRepository<OverloadAlert, Lo
     /** OverloadAlert.findByStatus(status): newest first. */
     List<OverloadAlert> findByStatusOrderByCreatedAtDesc(AlertStatus status);
 
-    boolean existsByHubIdAndStatus(Long hubId, AlertStatus status);
+    boolean existsByHub_IdAndStatus(Long hubId, AlertStatus status);
 }

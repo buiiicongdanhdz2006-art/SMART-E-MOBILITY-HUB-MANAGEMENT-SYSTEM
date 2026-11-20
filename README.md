@@ -44,6 +44,8 @@ python simulator.py --transport http --api http://localhost:8080
 
 Mobile: sửa `mobile/config.js` thành IP LAN của máy chạy backend, rồi `cd mobile && npm install && npx expo start` (mở bằng Expo Go).
 
+Khi cập nhật code có thay đổi entity, xoá thư mục `backend/data` (H2) để tạo lại CSDL.
+
 Có Mosquitto chạy ở máy thì bật MQTT bằng `MQTT_ENABLED=true` cho backend và chạy simulator mặc định (`--transport mqtt`).
 
 ### Tài khoản demo (tạo tự động lần chạy đầu – `DataSeeder`)
@@ -129,11 +131,12 @@ Trạng thái theo state chart:
 
 | Mức | Điều kiện |
 |---|---|
-| HIGH | Khẩn cấp (Priority Override, bắt buộc lý do) · dùng xe trong ≤ 60 phút · pin ≤ 20 % |
+| HIGH | Khẩn cấp (Priority Override, bắt buộc lý do) · bị gián đoạn do cổng hỏng · dùng xe trong ≤ 60 phút · pin ≤ 20 % |
 | MEDIUM | dùng xe trong ≤ 180 phút · pin ≤ 50 % · thời gian sạc ≥ 90 phút |
 | LOW | còn lại |
 
-Hàng chờ sắp theo: khẩn cấp → mức ưu tiên → giờ dùng xe gần nhất → pin thấp nhất → nhu cầu sạc lớn nhất → đến trước.
+Hàng chờ sắp theo: khẩn cấp → yêu cầu bị gián đoạn do cổng hỏng → mức ưu tiên → giờ dùng xe gần nhất → pin thấp nhất → nhu cầu sạc lớn nhất → đến trước.
+Yêu cầu đăng ký cho giờ sau chỉ được gán cổng khi còn ≤ 15 phút đến giờ bắt đầu (job mỗi phút `dispatchReadyRequests`).
 Lập lịch không ngắt xe đang sạc (non-preemptive); lịch gồm các cổng **gán ngay** và giờ sạc **dự kiến** của từng
 yêu cầu đang chờ (tính từ giờ kết thúc dự kiến của các phiên đang chạy). Tính lại lịch khi: có yêu cầu HIGH mới,
 Operator đánh dấu khẩn cấp hoặc bấm tính lại, cổng hỏng / sửa xong, yêu cầu bị huỷ / hết hạn, phiên sạc kết thúc.
@@ -173,9 +176,14 @@ Tuỳ chọn hay dùng: `--speed` (tăng tốc sạc), `--fault-rate` (hỏng c�
 cd backend && mvn test
 ```
 
+- `ChargingFlowIntegrationTest` (`@SpringBootTest`, H2 trong bộ nhớ, profile `test`): khởi động toàn bộ ứng dụng
+  (Spring, JPA, Tomcat) rồi chạy luồng F-06/F-07 qua service + repository thật — gán cổng, hàng chờ, cắm sạc, sạc xong
+  nhường cổng, cổng hỏng / sửa xong, huỷ — và gọi thử các API công khai (JSON, 401, 404). Nếu ánh xạ JPA hoặc query sai,
+  test này báo lỗi đầu tiên.
+
 Unit test (JUnit 5) cho các luật nghiệp vụ không cần database:
-`ChargingRequestStateTest` (state chart yêu cầu / phiên / cổng sạc), `SmartSchedulerPriorityTest` (độ ưu tiên và
-hàng chờ F-07), `FleetLogicTest` (mất cân bằng, gợi ý điều phối F-08), `SimulationEngineTest` (4 loại kịch bản F-10),
+`ChargingRequestStateTest` (state chart yêu cầu / phiên / cổng sạc), `SmartSchedulerPriorityTest` (độ ưu tiên, hàng chờ,
+yêu cầu bị gián đoạn F-07), `FleetLogicTest` (mất cân bằng, gợi ý điều phối F-08), `SimulationEngineTest` (4 loại kịch bản F-10),
 `DomainRulesTest` (băm mật khẩu, validate đăng ký, mức tải hub, state chart xe / sự cố / cảnh báo, quyền Operator).
 
 ## 7. API chính

@@ -5,8 +5,9 @@ import { Badge, Card, Empty, useLoad } from '../ui.jsx';
 /** F-13 / F-11: in-app notifications, refreshed live through the WebSocket. */
 export default function NotificationsPage({ session }) {
   const [items, reload] = useLoad(() => get('/api/notifications'));
-  useLive(['notification'], (m) => {
-    if (m.recipientId === session.accountId || (m.recipientId == null && m.recipientRole === session.role)) reload();
+  useLive(['notification'], reload, {
+    filter: (m) => m.recipientId === session.accountId || (m.recipientId == null && m.recipientRole === session.role),
+    throttleMs: 500,
   });
   const read = async (n) => { await post(`/api/notifications/${n.id}/read`); reload(); };
   return (

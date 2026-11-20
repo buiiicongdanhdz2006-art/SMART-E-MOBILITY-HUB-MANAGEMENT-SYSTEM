@@ -82,7 +82,7 @@ public class ScheduleController {
     @GetMapping("/hubs/{hubId}/latest")
     public ChargingSchedule latest(HttpServletRequest request, @PathVariable Long hubId) {
         CurrentAccount.requireOperator(request, null);
-        return schedules.findFirstByHubIdOrderByCreatedAtDesc(hubId).orElseThrow(() -> ApiException.notFound("lịch sạc của trạm"));
+        return schedules.findFirstByHub_IdOrderByCreatedAtDesc(hubId).orElseThrow(() -> ApiException.notFound("lịch sạc của trạm"));
     }
 
     /** The Operator marks a port FIXING (manual) or repaired (FIXING -&gt; AVAILABLE). */

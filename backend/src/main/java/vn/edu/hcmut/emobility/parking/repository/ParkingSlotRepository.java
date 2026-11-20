@@ -11,7 +11,7 @@ import vn.edu.hcmut.emobility.parking.entity.ParkingSlot;
 
 public interface ParkingSlotRepository extends JpaRepository<ParkingSlot, Long> {
 
-    List<ParkingSlot> findByHubIdOrderByCode(Long hubId);
+    List<ParkingSlot> findByHub_IdOrderByCode(Long hubId);
 
     Optional<ParkingSlot> findByCode(String code);
 

@@ -150,12 +150,12 @@ public class BookingService {
     }
 
     @Transactional(readOnly = true)
-    public List<Booking> myBookings(User user) { return bookings.findByUserIdOrderByCreatedAtDesc(user.getId()); }
+    public List<Booking> myBookings(User user) { return bookings.findByUser_IdOrderByCreatedAtDesc(user.getId()); }
 
     @Transactional(readOnly = true)
     public Rental rentalOfBooking(User user, Long bookingId) {
         ownBooking(user, bookingId);
-        return rentals.findByBookingId(bookingId).orElseThrow(() -> ApiException.notFound("lượt thuê"));
+        return rentals.findByBooking_Id(bookingId).orElseThrow(() -> ApiException.notFound("lượt thuê"));
     }
 
     /** Bookings not picked up 15 minutes after the pickup time expire and release the vehicle. */

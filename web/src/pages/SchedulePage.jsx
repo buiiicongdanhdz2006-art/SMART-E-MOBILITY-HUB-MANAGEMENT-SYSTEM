@@ -22,7 +22,7 @@ export default function SchedulePage() {
     try { setSchedule(await get(`/api/schedule/hubs/${id}/latest`)); } catch { setSchedule(null); }
   };
   const choose = (id) => { setHubId(id); setSchedule(null); load(id); };
-  useLive(['charging', 'port', 'schedule'], (m) => { if (!m.hubId || m.hubId === hubId) load(); });
+  useLive(['charging', 'port', 'schedule'], () => load(), { filter: (m) => !m.hubId || m.hubId === hubId });
 
   const generate = () => run(async () => {
     setSchedule(await post('/api/schedule/generate', { hubId, ...params, lowBatteryThreshold: Number(params.lowBatteryThreshold),

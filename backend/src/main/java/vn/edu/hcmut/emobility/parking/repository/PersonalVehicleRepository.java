@@ -10,7 +10,7 @@ public interface PersonalVehicleRepository extends JpaRepository<PersonalVehicle
     /** User.existsPlate(plate). */
     boolean existsByPlateIgnoreCase(String plate);
 
-    List<PersonalVehicle> findByOwnerId(Long ownerId);
+    List<PersonalVehicle> findByOwner_Id(Long ownerId);
 
     Optional<PersonalVehicle> findByPlateIgnoreCase(String plate);
 }

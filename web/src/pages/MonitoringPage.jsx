@@ -17,7 +17,7 @@ export default function MonitoringPage() {
   const [note, setNote] = useState({});
   const [retryCh, setRetryCh] = useState({});
   const [run, busy, error, ok] = useAction();
-  useLive(['notification'], () => reloadCases());
+  useLive(['notification'], () => reloadCases(), { filter: (m) => m.recipientRole === 'OPERATOR' });
 
   const review = async (id) => { setHubId(id); setState(id ? await get(`/api/monitoring/hubs/${id}`) : null); };
   const issue = () => run(async () => {

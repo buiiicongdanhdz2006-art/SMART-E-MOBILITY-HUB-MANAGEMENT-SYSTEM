@@ -259,7 +259,9 @@ class Simulator:
         st = self.ports.setdefault(code, PortState())
         rnd = random.random()
 
-        # Repair of a fault injected by the simulator.
+        # Repair of a fault injected by the simulator (unless an Operator already repaired the port).
+        if st.fault_ticks > 0 and status != "FIXING":
+            st.fault_ticks = 0
         if st.fault_ticks > 0:
             st.fault_ticks -= 1
             if st.fault_ticks == 0 and status == "FIXING":
@@ -342,6 +344,7 @@ class Simulator:
         event = "Idle"
         heading = row.heading
         if status in ("IN_USE", "IN_TRANSIT") and st.lat is not None:
+            start = (st.lat, st.lng)
             speed = max(row.speed, self.telemetry.moving_speed) * self.args.drive_speed
             event = row.event if row.event not in ("Idle",) else "Normal"
             if status == "IN_TRANSIT" and v.get("destLat") is not None:
@@ -355,7 +358,8 @@ class Simulator:
             else:
                 st.lat, st.lng = move(st.lat, st.lng, heading + random.uniform(-25, 25), speed * self.args.tick / 3600)
                 st.lat, st.lng = keep_on_campus(st.lat, st.lng)
-            st.battery = max(0.0, st.battery - 0.02 * speed * self.args.tick / 2)
+            # About 1.5 % of battery per km driven (small campus e-vehicles).
+            st.battery = max(0.0, st.battery - 1.5 * haversine(start[0], start[1], st.lat, st.lng))
 
         tire = row.tire + random.gauss(0, 1.0)
         if not st.tire_fault and random.random() < self.args.tire_fault_rate:

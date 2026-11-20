@@ -26,11 +26,12 @@ import vn.edu.hcmut.emobility.hub.entity.Hub;
 public class WaitingQueue {
 
     /**
-     * Order used by reorder(): urgent first, then HIGH &gt; MEDIUM &gt; LOW, then nearest usage time,
+     * Order used by reorder(): urgent first, then requests interrupted by a broken port, then HIGH &gt; MEDIUM &gt; LOW, then nearest usage time,
      * lowest battery, highest charging demand, and finally first come first served.
      */
     public static final Comparator<ChargingRequest> PRIORITY_ORDER = Comparator
             .comparing((ChargingRequest r) -> !r.isUrgent())
+            .thenComparing(r -> !r.isResumeFirst())
             .thenComparing(r -> r.getPriority().ordinal())
             .thenComparing(r -> r.getNextUsageTime() == null ? LocalDateTime.MAX : r.getNextUsageTime())
             .thenComparingInt(ChargingRequest::getBatteryLevel)

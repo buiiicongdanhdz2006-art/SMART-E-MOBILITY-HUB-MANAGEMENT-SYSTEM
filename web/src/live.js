@@ -18,14 +18,26 @@ function connect() {
   socket.onclose = () => { setTimeout(connect, retry); retry = Math.min(retry * 2, 15000); };
 }
 
-/** Calls handler(msg) for every live update whose type is in `types` (all types if empty). */
-export function useLive(types, handler) {
-  const ref = useRef(handler);
-  ref.current = handler;
+/**
+ * Calls handler(msg) for live updates whose type is in `types` (all types if empty) and that pass `filter`.
+ * Bursts are coalesced: the handler runs at most once per `throttleMs` (with the last message), because the
+ * IoT simulator sends many messages per second and each handler usually reloads data from the API.
+ */
+export function useLive(types, handler, { filter, throttleMs = 1500 } = {}) {
+  const ref = useRef({ handler, filter });
+  ref.current = { handler, filter };
   useEffect(() => {
     connect();
-    const fn = (msg) => { if (!types?.length || types.includes(msg.type)) ref.current(msg); };
+    let timer = null;
+    let last = null;
+    const fire = () => { timer = null; const m = last; last = null; ref.current.handler(m); };
+    const fn = (msg) => {
+      if (types?.length && !types.includes(msg.type)) return;
+      if (ref.current.filter && !ref.current.filter(msg)) return;
+      last = msg;
+      if (!timer) timer = setTimeout(fire, throttleMs);
+    };
     listeners.add(fn);
-    return () => listeners.delete(fn);
-  }, [JSON.stringify(types)]);
+    return () => { listeners.delete(fn); if (timer) clearTimeout(timer); };
+  }, [JSON.stringify(types), throttleMs]);
 }

@@ -1,5 +1,7 @@
 package vn.edu.hcmut.emobility.hub.service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,12 +43,13 @@ public class OverloadMonitor {
     @Scheduled(fixedDelayString = "${hub.overload-check-ms:30000}", initialDelay = 20000)
     @Transactional
     public void check() {
+        List<Map<String, Object>> snapshot = new ArrayList<>();
         for (Hub hub : hubs.findAll()) {
             HubStatus st = hubService.status(hub);
-            live.publish("hub-status", Map.of("hubId", hub.getId(), "loadLevel", st.loadLevel().name(),
+            snapshot.add(Map.of("hubId", hub.getId(), "loadLevel", st.loadLevel().name(),
                     "utilisation", st.utilisation(), "freeSlots", st.freeSlots(), "freePorts", st.freePorts(),
                     "availableVehicles", hub.countAvailable(), "waiting", st.waitingRequests()));
-            if (st.loadLevel() == LoadLevel.OVERLOADED && !alerts.existsByHubIdAndStatus(hub.getId(), AlertStatus.OPEN)) {
+            if (st.loadLevel() == LoadLevel.OVERLOADED && !alerts.existsByHub_IdAndStatus(hub.getId(), AlertStatus.OPEN)) {
                 String msg = "Trạm " + hub.getName() + " quá tải: sử dụng " + Math.round(st.utilisation() * 100)
                         + "%, " + st.waitingRequests() + " yêu cầu sạc đang chờ.";
                 alerts.save(new OverloadAlert(hub, st.loadLevel(), st.utilisation(), msg));
@@ -54,5 +57,6 @@ public class OverloadMonitor {
                 log.warn(msg);
             }
         }
+        live.publish("hub-status", Map.of("hubs", snapshot));
     }
 }

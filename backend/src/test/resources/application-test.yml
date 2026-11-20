@@ -1,0 +1,12 @@
+# Profile used by the integration tests: in-memory H2, no MQTT broker, no demo data.
+spring:
+  datasource:
+    url: jdbc:h2:mem:emobility-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+iot:
+  mqtt:
+    enabled: false
+app:
+  seed:
+    enabled: false

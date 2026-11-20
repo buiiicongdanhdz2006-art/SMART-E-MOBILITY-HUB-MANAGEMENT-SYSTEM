@@ -6,9 +6,13 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.TypeMismatchException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -28,6 +32,24 @@ public class GlobalExceptionHandler {
         return body(400, "Dữ liệu gửi lên sai định dạng", List.of());
     }
 
+    /** Wrong type in a path variable / query parameter, e.g. ?status=FOO. */
+    @ExceptionHandler(TypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleTypeMismatch(TypeMismatchException e) {
+        return body(400, "Giá trị không hợp lệ: " + e.getValue(), List.of());
+    }
+
+    /** Unique constraint (e.g. two requests registering the same e-mail at the same time). */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleIntegrity(DataIntegrityViolationException e) {
+        return body(409, "Dữ liệu bị trùng hoặc vi phạm ràng buộc", List.of());
+    }
+
+    /** Another transaction holds the row lock (vehicle / slot / port being booked at the same moment). */
+    @ExceptionHandler(PessimisticLockingFailureException.class)
+    public ResponseEntity<Map<String, Object>> handleLock(PessimisticLockingFailureException e) {
+        return body(409, "Tài nguyên đang được người khác đặt, vui lòng thử lại", List.of());
+    }
+
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, Object>> handleState(IllegalStateException e) {
         return body(409, e.getMessage(), List.of());
@@ -40,6 +62,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleOther(Exception e) {
+        // Spring MVC errors (404 unknown path, 405 wrong method, 400 missing parameter, 415 ...) keep their status.
+        if (e instanceof ErrorResponse er) {
+            int status = er.getStatusCode().value();
+            return body(status, status == 404 ? "Không tìm thấy đường dẫn" : e.getMessage(), List.of());
+        }
         log.error("Unexpected error", e);
         return body(500, "Lỗi hệ thống: " + e.getClass().getSimpleName(), List.of());
     }

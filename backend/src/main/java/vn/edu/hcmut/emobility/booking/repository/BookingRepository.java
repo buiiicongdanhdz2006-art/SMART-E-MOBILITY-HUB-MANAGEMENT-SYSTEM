@@ -11,9 +11,9 @@ import vn.edu.hcmut.emobility.common.enums.BookingStatus;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
-    List<Booking> findByUserIdAndStatusInOrderByPickupTimeAsc(Long userId, Collection<BookingStatus> statuses);
+    List<Booking> findByUser_IdAndStatusInOrderByPickupTimeAsc(Long userId, Collection<BookingStatus> statuses);
 
-    List<Booking> findByUserIdOrderByCreatedAtDesc(Long userId);
+    List<Booking> findByUser_IdOrderByCreatedAtDesc(Long userId);
 
     List<Booking> findByStatus(BookingStatus status);
 

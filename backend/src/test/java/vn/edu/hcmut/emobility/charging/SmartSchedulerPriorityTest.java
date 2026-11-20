@@ -75,6 +75,21 @@ class SmartSchedulerPriorityTest {
     }
 
     @Test
+    void requestInterruptedByBrokenPortIsServedRightAfterUrgentOnes() {
+        WaitingQueue q = new WaitingQueue(hub);
+        ChargingRequest high = req(10, 20, 30, 0);       // HIGH by battery and usage time
+        ChargingRequest resumed = req(80, null, 30, 1);  // would be LOW
+        resumed.markResumeFirst();
+        resumed.setPriority(SmartScheduler.calculatePriority(resumed, params, now));
+        ChargingRequest urgent = req(90, null, 30, 2);
+        urgent.markUrgent("Ưu tiên");
+        for (ChargingRequest r : List.of(high, resumed, urgent)) q.enqueue(r);
+        q.reorder();
+        assertEquals(PriorityLevel.HIGH, resumed.getPriority());
+        assertEquals(List.of(urgent, resumed, high), q.getAll());
+    }
+
+    @Test
     void moveToNextAndRemove() {
         WaitingQueue q = new WaitingQueue(hub);
         ChargingRequest a = req(80, null, 30, 0);

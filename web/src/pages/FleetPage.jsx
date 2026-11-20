@@ -19,7 +19,7 @@ export default function FleetPage() {
   const [inc, setInc] = useState({});
   const [run, busy, error, ok] = useAction();
   const reloadAll = () => { reloadStats(); reloadVehicles(); reloadImb(); reloadSug(); reloadOrders(); };
-  useLive(['dispatch', 'vehicle'], reloadAll);
+  useLive(['dispatch', 'vehicle'], reloadAll, { throttleMs: 4000 });
 
   const dispatch = (req) => run(async () => { await post('/api/fleet/dispatch-orders', req); reloadAll(); }, 'Đã tạo lệnh điều phối');
   const arrive = (o, v) => run(async () => { await post(`/api/fleet/dispatch-orders/${o.id}/arrivals/${v.id}`); reloadAll(); }, `Xe ${v.code} đã đến`);

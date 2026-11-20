@@ -16,7 +16,7 @@ export default function IncidentsPage() {
   const [f, setF] = useState({ type: 'VEHICLE_FAULT', severity: 'MEDIUM', hubId: null, vehicleId: '', title: '', description: '' });
   const [text, setText] = useState('');
   const [run, busy, error, ok] = useAction();
-  useLive(['notification'], (m) => { if (m.alertType === 'INCIDENT') reload(); });
+  useLive(['notification'], reload, { filter: (m) => m.alertType === 'INCIDENT' });
 
   const open = async (i) => setSelected(await get(`/api/incidents/${i.id}`));
   const act = (action, body) => run(async () => { const r = await post(`/api/incidents/${selected.id}/${action}`, body); setSelected(r); setText(''); await reload(); }, 'Đã cập nhật sự cố');

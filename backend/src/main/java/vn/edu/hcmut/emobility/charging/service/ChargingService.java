@@ -80,7 +80,7 @@ public class ChargingService {
     @Transactional(readOnly = true)
     public List<ChargingPort> getPortStatus(Long hubId) {
         hubQuery.getHub(hubId);
-        return ports.findByHubIdOrderByCode(hubId);
+        return ports.findByHub_IdOrderByCode(hubId);
     }
 
     /** Forwards the fault to incident reporting (F-09.1), sets the port to FIXING and warns the Operators. */
@@ -219,7 +219,9 @@ public class ChargingService {
         r.startCharging();
         port.startCharging();
         r.startSession(now);
-        if (r.getVehicle() != null) vehicleState.changeStatus(r.getVehicle().getId(), VehicleStatus.CHARGING);
+        if (r.getVehicle() != null && r.getVehicle().getStatus() == VehicleStatus.AVAILABLE) {
+            vehicleState.changeStatus(r.getVehicle().getId(), VehicleStatus.CHARGING);
+        }
         requests.save(r);
         ports.save(port);
         notification.notifyUser(r.getUserId(), AlertType.GENERAL, "Bắt đầu sạc",
@@ -310,7 +312,7 @@ public class ChargingService {
 
     @Transactional(readOnly = true)
     public List<ChargingRequestView> getRequestsByUser(Long userId) {
-        return requests.findByUserIdOrderByCreatedAtDesc(userId).stream().map(this::view).toList();
+        return requests.findByUser_IdOrderByCreatedAtDesc(userId).stream().map(this::view).toList();
     }
 
     /** Cancels a WAITING or ASSIGNED request of the User and calls SmartScheduler.onRequestReleased(). */
@@ -369,7 +371,7 @@ public class ChargingService {
 
     @Transactional(readOnly = true)
     public List<ChargingRequestView> getActiveByHub(Long hubId) {
-        return requests.findByHubIdAndStatusIn(hubId, List.of(RequestStatus.ASSIGNED, RequestStatus.CHARGING))
+        return requests.findByHub_IdAndStatusIn(hubId, List.of(RequestStatus.ASSIGNED, RequestStatus.CHARGING))
                 .stream().map(this::view).toList();
     }
 

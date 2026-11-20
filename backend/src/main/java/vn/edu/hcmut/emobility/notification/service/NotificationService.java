@@ -85,15 +85,20 @@ public class NotificationService implements INotification {
         save(new Notification(op.getId(), Role.OPERATOR, AlertType.GENERAL, "Thông báo hệ thống", message, NotificationChannel.IN_APP));
     }
 
-    /** Sends the new charging schedule to the related Users and the Operators (UC-F07-02, UC-F07-03). */
+    /**
+     * Sends the new charging schedule to the related Users and the Operators (UC-F07-02, UC-F07-03).
+     * Users whose port is assigned now were already notified by SmartScheduler.doAssign, so only the
+     * estimated slots are sent; the Operator summary is sent when an Operator created the schedule.
+     */
     @Transactional
-    public void sendScheduleUpdate(ChargingSchedule schedule) {
+    public void sendScheduleUpdate(ChargingSchedule schedule, boolean toOperators) {
         for (PortAssignment a : schedule.getAssignments()) {
-            String msg = a.isImmediate()
-                    ? "Yêu cầu sạc #" + a.getRequestId() + " được gán cổng " + a.getPortCode() + ". Vui lòng cắm sạc trong 15 phút."
-                    : "Yêu cầu sạc #" + a.getRequestId() + " dự kiến sạc tại cổng " + a.getPortCode() + " lúc " + a.getPlannedStart().toLocalTime().withNano(0) + ".";
-            notifyUser(a.getUserId(), AlertType.SCHEDULE_UPDATE, "Cập nhật lịch sạc", msg);
+            if (a.isImmediate()) continue;
+            notifyUser(a.getUserId(), AlertType.SCHEDULE_UPDATE, "Cập nhật lịch sạc",
+                    "Yêu cầu sạc #" + a.getRequestId() + " dự kiến sạc tại cổng " + a.getPortCode() + " lúc "
+                            + a.getPlannedStart().toLocalTime().withNano(0) + ".");
         }
+        if (!toOperators) return;
         notifyOperators(AlertType.SCHEDULE_UPDATE, "Lịch sạc mới - " + schedule.getHubName(),
                 "Đã tạo lịch sạc với " + schedule.getAssignments().size() + " phân bổ, " + schedule.getWaitingCount() + " yêu cầu đang chờ"
                         + (schedule.isOverloaded() ? " (TRẠM QUÁ TẢI)" : "") + ".");
@@ -160,8 +165,6 @@ public class NotificationService implements INotification {
         payload.put("recipientId", n.getRecipientId());
         payload.put("recipientRole", n.getRecipientRole());
         payload.put("alertType", n.getType());
-        payload.put("title", n.getTitle());
-        payload.put("message", n.getMessage());
         live.publish("notification", payload);
     }
 }

@@ -1,5 +1,6 @@
 package vn.edu.hcmut.emobility.fleet.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import vn.edu.hcmut.emobility.common.enums.ImbalanceType;
 import vn.edu.hcmut.emobility.common.enums.SeverityLevel;
 import vn.edu.hcmut.emobility.hub.entity.Hub;
@@ -27,7 +28,9 @@ public record HubImbalance(Long hubId, String hubName, int available, int demand
     /** True if the Hub lacks vehicles, false if it has a surplus. */
     public boolean isShortage() { return gap < 0; }
 
+    @JsonProperty("type")
     public ImbalanceType getType() { return isShortage() ? ImbalanceType.SHORTAGE : ImbalanceType.SURPLUS; }
 
+    @JsonProperty("severity")
     public SeverityLevel getSeverity() { return calculateSeverity(); }
 }

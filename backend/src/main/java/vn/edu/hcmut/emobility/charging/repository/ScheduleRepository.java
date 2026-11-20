@@ -6,5 +6,5 @@ import vn.edu.hcmut.emobility.charging.entity.ChargingSchedule;
 
 public interface ScheduleRepository extends JpaRepository<ChargingSchedule, Long> {
     /** findLatestByHub(hubId). */
-    Optional<ChargingSchedule> findFirstByHubIdOrderByCreatedAtDesc(Long hubId);
+    Optional<ChargingSchedule> findFirstByHub_IdOrderByCreatedAtDesc(Long hubId);
 }

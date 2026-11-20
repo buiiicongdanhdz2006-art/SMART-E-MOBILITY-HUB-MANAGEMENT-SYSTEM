@@ -48,7 +48,7 @@ public class HubDatabase {
         s.openHour = h.getOpenHour();
         s.closeHour = h.getCloseHour();
 
-        List<ChargingRequest> active = chargingRequests.findByHubIdAndStatusIn(hubId,
+        List<ChargingRequest> active = chargingRequests.findByHub_IdAndStatusIn(hubId,
                 List.of(RequestStatus.WAITING, RequestStatus.ASSIGNED, RequestStatus.CHARGING, RequestStatus.CREATED));
         s.chargingNow = (int) active.stream().filter(r -> r.getStatus() == RequestStatus.CHARGING).count();
         s.waitingRequests = h.waitingCount();

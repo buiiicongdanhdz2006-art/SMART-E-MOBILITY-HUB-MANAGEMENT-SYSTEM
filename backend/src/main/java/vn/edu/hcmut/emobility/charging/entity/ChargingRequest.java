@@ -70,6 +70,9 @@ public class ChargingRequest {
     private boolean urgent;
     private String urgentReason;
 
+    /** Set when the assigned port broke before / during charging: the request is served first when a port frees up. */
+    private boolean resumeFirst;
+
     @JsonIgnore
     @ManyToOne
     private ChargingPort assignedPort;
@@ -106,6 +109,7 @@ public class ChargingRequest {
         this.assignedPort = port;
         this.assignedAt = LocalDateTime.now();
         this.status = RequestStatus.ASSIGNED;
+        this.resumeFirst = false;
         touch();
     }
 
@@ -207,6 +211,8 @@ public class ChargingRequest {
     public void setPriority(PriorityLevel priority) { this.priority = urgent ? PriorityLevel.HIGH : priority; }
     public boolean isUrgent() { return urgent; }
     public String getUrgentReason() { return urgentReason; }
+    public boolean isResumeFirst() { return resumeFirst; }
+    public void markResumeFirst() { this.resumeFirst = true; }
     @JsonIgnore
     public ChargingPort getAssignedPort() { return assignedPort; }
     public LocalDateTime getAssignedAt() { return assignedAt; }

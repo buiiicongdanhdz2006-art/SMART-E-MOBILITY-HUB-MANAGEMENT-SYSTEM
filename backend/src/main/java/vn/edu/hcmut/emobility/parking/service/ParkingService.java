@@ -45,7 +45,7 @@ public class ParkingService {
     @Transactional(readOnly = true)
     public List<ParkingSlot> viewParkingAvailability(Long hubId) {
         hubQuery.getHub(hubId);
-        return slots.findByHubIdOrderByCode(hubId);
+        return slots.findByHub_IdOrderByCode(hubId);
     }
 
     /** UC-F05-02: checks availability, assigns a slot, creates the reservation, slot -&gt; RESERVED. */
@@ -64,7 +64,7 @@ public class ParkingService {
 
         PersonalVehicle vehicle = personalVehicles.findById(vehicleId).orElseThrow(() -> ApiException.notFound("xe cá nhân"));
         if (!vehicle.getOwnerId().equals(owner.getId())) throw ApiException.forbidden("Xe không thuộc về bạn");
-        boolean vehicleBusy = reservations.findByOwnerIdOrderByStartTimeDesc(owner.getId()).stream()
+        boolean vehicleBusy = reservations.findByOwner_IdOrderByStartTimeDesc(owner.getId()).stream()
                 .anyMatch(r -> r.isActive() && r.getVehicle().getId().equals(vehicleId) && r.overlaps(start, end));
         if (vehicleBusy) throw ApiException.conflict("Xe " + vehicle.getPlate() + " đã có chỗ đỗ trong khung giờ này");
 
@@ -114,7 +114,7 @@ public class ParkingService {
 
     @Transactional(readOnly = true)
     public List<ParkingReservation> myReservations(User owner) {
-        return reservations.findByOwnerIdOrderByStartTimeDesc(owner.getId());
+        return reservations.findByOwner_IdOrderByStartTimeDesc(owner.getId());
     }
 
     /** Slot sensor data (F-12): occupied by a car without check-in shows OCCUPIED. */
@@ -146,7 +146,7 @@ public class ParkingService {
 
     /** OCCUPIED if a car is checked in (or the sensor sees a car), RESERVED if reserved, otherwise AVAILABLE. */
     void refreshSlotStatus(ParkingSlot slot) {
-        List<ParkingReservation> active = reservations.findBySlotIdAndStatusIn(slot.getId(),
+        List<ParkingReservation> active = reservations.findBySlot_IdAndStatusIn(slot.getId(),
                 List.of(ReservationStatus.RESERVED, ReservationStatus.CHECKED_IN));
         if (active.stream().anyMatch(x -> x.getStatus() == ReservationStatus.CHECKED_IN) || Boolean.TRUE.equals(slot.getSensorOccupied())) {
             slot.updateStatus(SlotStatus.OCCUPIED);

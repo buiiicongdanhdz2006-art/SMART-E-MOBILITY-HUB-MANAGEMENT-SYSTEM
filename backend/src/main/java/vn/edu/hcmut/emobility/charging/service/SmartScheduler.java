@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmut.emobility.charging.dto.ScheduleParams;
@@ -91,7 +92,7 @@ public class SmartScheduler implements IChargingEvents {
      * </ul>
      */
     public static PriorityLevel calculatePriority(ChargingRequest r, ScheduleParams p, LocalDateTime now) {
-        if (r.isUrgent()) return PriorityLevel.HIGH;
+        if (r.isUrgent() || r.isResumeFirst()) return PriorityLevel.HIGH;
         Long minutesToUse = r.getNextUsageTime() == null ? null : Duration.between(now, r.getNextUsageTime()).toMinutes();
         if (minutesToUse != null && minutesToUse <= p.nearUsage()) return PriorityLevel.HIGH;
         if (r.getBatteryLevel() <= p.lowBattery()) return PriorityLevel.HIGH;
@@ -254,6 +255,7 @@ public class SmartScheduler implements IChargingEvents {
                     }
                 }
                 affected.moveToWaiting();
+                affected.markResumeFirst();
                 queueOf(affected.getHubId()).moveToNext(affected);
                 requests.save(affected);
                 notification.notifyUser(affected.getUserId(), AlertType.PORT_FAULT, "Cổng sạc gặp sự cố",
@@ -272,13 +274,25 @@ public class SmartScheduler implements IChargingEvents {
         live.publish("port", Map.of("portId", port.getId(), "hubId", port.getHubId(), "status", port.getStatus().name()));
     }
 
+    /**
+     * Every minute: gives free ports to waiting requests whose start time has come (a request registered for
+     * later is not assigned before its start time, so no event would otherwise wake it up).
+     */
+    @Scheduled(fixedDelay = 60000, initialDelay = 55000)
+    @Transactional
+    public void dispatchReadyRequests() {
+        for (WaitingQueue q : queues.findAll()) {
+            if (q.size() > 0) assignFreePorts(q.getHub().getId());
+        }
+    }
+
     // ---- internals ---------------------------------------------------------------------------
 
     /**
      * Builds the schedule: the ports assigned now plus, for each request still waiting, the earliest
      * estimated time a port of its area becomes free (based on the running sessions and earlier plans).
      */
-    ChargingSchedule buildSchedule(Hub hub, ScheduleParams params, Long operatorId) {
+    public ChargingSchedule buildSchedule(Hub hub, ScheduleParams params, Long operatorId) {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime windowEnd = params.windowEnd() == null ? now.plusHours(12) : params.windowEnd();
         List<PortAssignment> immediate = assignFreePorts(hub.getId());
@@ -288,7 +302,7 @@ public class SmartScheduler implements IChargingEvents {
 
         // When does each working port become free?
         Map<ChargingPort, LocalDateTime> freeAt = new HashMap<>();
-        for (ChargingPort p : ports.findByHubIdOrderByCode(hub.getId())) {
+        for (ChargingPort p : ports.findByHub_IdOrderByCode(hub.getId())) {
             if (p.getStatus() == PortStatus.FIXING) continue;
             LocalDateTime t = now;
             ChargingRequest holder = requests.findActiveByPort(p.getId()).orElse(null);
@@ -326,7 +340,7 @@ public class SmartScheduler implements IChargingEvents {
         schedule.setOverloaded(hub.isOverloaded(queue.size()));
         schedule.setNote(immediate.size() + " cổng gán ngay, " + queue.size() + " yêu cầu chờ");
         schedules.save(schedule);
-        notificationService.sendScheduleUpdate(schedule);
+        notificationService.sendScheduleUpdate(schedule, operatorId != null);
         if (schedule.isOverloaded()) {
             notification.notifyOperators(AlertType.HUB_OVERLOAD, "Trạm sạc quá tải",
                     "Trạm " + hub.getName() + " có " + queue.size() + " yêu cầu chờ (ngưỡng " + hub.getOverloadThreshold()
@@ -336,14 +350,14 @@ public class SmartScheduler implements IChargingEvents {
         return schedule;
     }
 
-    WaitingQueue queueOf(Long hubId) {
-        return queues.findByHubId(hubId).orElseGet(() -> {
+    public WaitingQueue queueOf(Long hubId) {
+        return queues.findByHub_Id(hubId).orElseGet(() -> {
             Hub hub = hubs.findById(hubId).orElseThrow(() -> ApiException.notFound("trạm"));
             return queues.save(new WaitingQueue(hub));
         });
     }
 
-    void publish(ChargingRequest r) {
+    public void publish(ChargingRequest r) {
         Map<String, Object> m = new HashMap<>();
         m.put("requestId", r.getId());
         m.put("userId", r.getUserId());

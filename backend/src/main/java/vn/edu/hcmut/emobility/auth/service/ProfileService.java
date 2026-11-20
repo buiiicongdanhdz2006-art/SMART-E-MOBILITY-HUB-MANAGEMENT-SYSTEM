@@ -39,7 +39,7 @@ public class ProfileService {
     /** UC-F01-05: account information + personal vehicles + active bookings. */
     @Transactional(readOnly = true)
     public ProfileData getProfile(Account account) {
-        List<PersonalVehicle> vehicles = account instanceof User ? personalVehicles.findByOwnerId(account.getId()) : List.of();
+        List<PersonalVehicle> vehicles = account instanceof User ? personalVehicles.findByOwner_Id(account.getId()) : List.of();
         List<Booking> active = account instanceof User ? getActiveBookings(account.getId()) : List.of();
         return new ProfileData(account.getId(), account.getEmail(), account.getPhone(), account.getStudentId(),
                 account.getFullName(), account.getRole().name(), account.getStatus().name(), vehicles, active);
@@ -66,7 +66,7 @@ public class ProfileService {
     @Transactional(readOnly = true)
     public List<Booking> getHistory(Long userId, int days) {
         LocalDateTime from = LocalDateTime.now().minusDays(days <= 0 ? 30 : days);
-        List<Booking> ended = bookings.findByUserIdOrderByCreatedAtDesc(userId).stream()
+        List<Booking> ended = bookings.findByUser_IdOrderByCreatedAtDesc(userId).stream()
                 .filter(b -> b.getStatus() == BookingStatus.COMPLETED || b.getStatus() == BookingStatus.CANCELLED
                         || b.getStatus() == BookingStatus.EXPIRED)
                 .filter(b -> b.getEndedAt() != null && !b.getEndedAt().isBefore(from))
@@ -96,10 +96,10 @@ public class ProfileService {
         return personalVehicles.save(v);
     }
 
-    public List<PersonalVehicle> getVehicles(Long userId) { return personalVehicles.findByOwnerId(userId); }
+    public List<PersonalVehicle> getVehicles(Long userId) { return personalVehicles.findByOwner_Id(userId); }
 
     List<Booking> getActiveBookings(Long userId) {
-        return bookings.findByUserIdAndStatusInOrderByPickupTimeAsc(userId, List.of(BookingStatus.RESERVED, BookingStatus.IN_PROGRESS));
+        return bookings.findByUser_IdAndStatusInOrderByPickupTimeAsc(userId, List.of(BookingStatus.RESERVED, BookingStatus.IN_PROGRESS));
     }
 
     static List<Booking> sortNewestFirst(List<Booking> list) {

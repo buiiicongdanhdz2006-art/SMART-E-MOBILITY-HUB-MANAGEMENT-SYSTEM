@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { fmtClock, fmtTime, get, localInput, post } from '../api.js';
+import { fmtClock, fmtTime, get, post } from '../api.js';
 import { useLive } from '../live.js';
 import { Badge, Bar, Card, Empty, Field, HubSelect, Msg, useAction, useLoad } from '../ui.jsx';
 
@@ -12,7 +12,7 @@ export default function ChargingPage({ session }) {
   const [hubId, setHubId] = useState(null);
   const [ports, setPorts] = useState([]);
   const [queue, setQueue] = useState([]);
-  const [f, setF] = useState({ vehicle: '', area: '', batteryLevel: 25, targetBattery: 90, expectedDuration: 60, startTime: localInput(0), nextUsageTime: '' });
+  const [f, setF] = useState({ vehicle: '', area: '', batteryLevel: 25, targetBattery: 90, expectedDuration: 60, startTime: '', nextUsageTime: '' });
   const [fault, setFault] = useState({ portId: null, note: '' });
   const [run, busy, error, ok] = useAction();
 
@@ -77,7 +77,7 @@ export default function ChargingPage({ session }) {
             <Field label="Pin hiện tại (%)"><input type="number" value={f.batteryLevel} onChange={(e) => setF({ ...f, batteryLevel: e.target.value })} placeholder={isOperator ? 'Lấy từ xe' : ''} /></Field>
             <Field label="Pin mục tiêu (%)"><input type="number" value={f.targetBattery} onChange={(e) => setF({ ...f, targetBattery: e.target.value })} /></Field>
             <Field label="Thời gian sạc dự kiến (phút)"><input type="number" value={f.expectedDuration} onChange={(e) => setF({ ...f, expectedDuration: e.target.value })} /></Field>
-            <Field label="Bắt đầu"><input type="datetime-local" value={f.startTime} onChange={(e) => setF({ ...f, startTime: e.target.value })} /></Field>
+            <Field label="Bắt đầu (để trống = ngay bây giờ)"><input type="datetime-local" value={f.startTime} onChange={(e) => setF({ ...f, startTime: e.target.value })} /></Field>
             <Field label="Lần dùng xe kế tiếp (tuỳ chọn)"><input type="datetime-local" value={f.nextUsageTime} onChange={(e) => setF({ ...f, nextUsageTime: e.target.value })} /></Field>
           </div>
           <div className="row" style={{ marginTop: 10 }}><button onClick={submit} disabled={busy || !hubId || !f.vehicle}>Gửi yêu cầu</button>
