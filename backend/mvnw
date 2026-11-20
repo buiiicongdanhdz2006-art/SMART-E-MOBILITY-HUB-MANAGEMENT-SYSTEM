@@ -1,0 +1,44 @@
+#!/bin/sh
+# Maven wrapper (macOS / Linux): downloads the Maven version written in .mvn/wrapper/maven-wrapper.properties
+# on first use, then runs it. You only need Java 17+ and curl (or wget).
+#   ./mvnw test
+#   ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+set -e
+BASEDIR=$(cd "$(dirname "$0")" && pwd)
+PROPS="$BASEDIR/.mvn/wrapper/maven-wrapper.properties"
+URL=$(sed -n 's/^distributionUrl=//p' "$PROPS" | tr -d '\r')
+[ -n "$URL" ] || { echo "distributionUrl is missing in $PROPS" >&2; exit 1; }
+
+# --- Java 17+ ---------------------------------------------------------------------------
+if [ -n "$JAVA_HOME" ]; then JAVA="$JAVA_HOME/bin/java"; else JAVA=java; fi
+if ! "$JAVA" -version >/dev/null 2>&1; then
+  echo "Khong tim thay Java. Cai JDK 17+ (vd: brew install openjdk@21) roi chay lai." >&2
+  exit 1
+fi
+JAVA_MAJOR=$("$JAVA" -version 2>&1 | head -n 1 | sed 's/.*version "\([0-9]*\).*/\1/')
+if [ "$JAVA_MAJOR" -lt 17 ] 2>/dev/null; then
+  echo "Can Java 17 tro len, may dang dung Java $JAVA_MAJOR." >&2
+  exit 1
+fi
+
+# --- Maven -------------------------------------------------------------------------------
+NAME=$(basename "$URL" -bin.zip)
+DIST_DIR="${MAVEN_USER_HOME:-$HOME/.m2}/wrapper/dists/$NAME"
+MVN="$DIST_DIR/$NAME/bin/mvn"
+if [ ! -x "$MVN" ]; then
+  echo "Dang tai $NAME (chi lan dau)..." >&2
+  mkdir -p "$DIST_DIR"
+  TMP="$DIST_DIR/download.zip"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL -o "$TMP" "$URL"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q -O "$TMP" "$URL"
+  else
+    echo "Can curl hoac wget de tai Maven." >&2
+    exit 1
+  fi
+  unzip -q -o "$TMP" -d "$DIST_DIR"
+  rm -f "$TMP"
+  chmod +x "$MVN"
+fi
+exec "$MVN" -f "$BASEDIR/pom.xml" "$@"

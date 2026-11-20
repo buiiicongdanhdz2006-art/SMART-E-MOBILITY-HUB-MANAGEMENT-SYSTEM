@@ -29,8 +29,9 @@ docker compose up --build
 
 ```bash
 # 1) Backend với H2 (file ./backend/data), MQTT tắt
+#    Cần Java 17+; không cần cài Maven: ./mvnw tự tải Maven ở lần chạy đầu (Windows: mvnw.cmd)
 cd backend
-mvn spring-boot:run -Dspring-boot.run.profiles=local
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 
 # 2) Web (proxy /api và /ws sang :8080)
 cd web
@@ -173,7 +174,7 @@ Tuỳ chọn hay dùng: `--speed` (tăng tốc sạc), `--fault-rate` (hỏng c�
 ## 6. Kiểm thử
 
 ```bash
-cd backend && mvn test
+cd backend && ./mvnw test        # Windows: mvnw.cmd test
 ```
 
 - `ChargingFlowIntegrationTest` (`@SpringBootTest`, H2 trong bộ nhớ, profile `test`): khởi động toàn bộ ứng dụng
